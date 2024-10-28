@@ -4,6 +4,8 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
 from django.views.generic import TemplateView
 from .forms import LoginForm, SignUpForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.list import ListView
 
 class SignUpView(CreateView):
     form_class = SignUpForm
@@ -24,6 +26,17 @@ class Logout(LogoutView):
 
 class ProductList(TemplateView):
     template_name = "main/home.html"
+
+class AccountView(LoginRequiredMixin, ListView):
+    template_name = "main/account.html"
+    paginate_by = 5
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.has_ordered.order_by("-created_at")
+
+class ProductDetail(TemplateView):
+    template_name = "main/product_detail.html"
 
 # ↓初回授業のHTML,CSSの確認用
 # from django.shortcuts import render
