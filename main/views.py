@@ -6,6 +6,9 @@ from django.views.generic import TemplateView
 from .forms import LoginForm, SignUpForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.list import ListView
+from .forms import ProductSearchForm #23で追加
+from .models import Product #23で追加
+
 
 class SignUpView(CreateView):
     form_class = SignUpForm
@@ -24,8 +27,29 @@ class Login(LoginView):
 class Logout(LogoutView):
     pass
 
-class ProductList(TemplateView):
+class ProductList(ListView):
+    paginate_by = 15
     template_name = "main/home.html"
+
+    def get_queryset(self):
+        products = Product.objects.order_by("-created_at")
+
+        form = ProductSearchForm(self.request.GET)
+
+        if form.is_valid():
+            keyword = form.cleaned_data.get("keyword")
+            if keyword:
+                products = products.filter(name__icontains=keyword)
+
+        return products
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = ProductSearchForm(self.request.GET)
+        context["form"] = form
+        if form.is_valid():
+            context["keyword"] = form.cleaned_data.get("keyword")
+        return context
 
 class AccountView(LoginRequiredMixin, ListView):
     template_name = "main/account.html"
