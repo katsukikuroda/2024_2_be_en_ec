@@ -8,7 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.list import ListView
 from .forms import ProductSearchForm #23で追加
 from .models import Product #23で追加
-
+from django.views.generic.detail import DetailView #24で追加
+from .forms import ProductNumForm #24で追加
 
 class SignUpView(CreateView):
     form_class = SignUpForm
@@ -59,8 +60,13 @@ class AccountView(LoginRequiredMixin, ListView):
         user = self.request.user
         return user.has_ordered.order_by("-created_at")
 
-class ProductDetail(TemplateView):
-    template_name = "main/product_detail.html"
+class ProductDetail(DetailView):
+    model = Product
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = ProductNumForm()
+        return context
 
 # ↓初回授業のHTML,CSSの確認用
 # from django.shortcuts import render
