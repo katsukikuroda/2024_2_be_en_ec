@@ -8,6 +8,7 @@ urlpatterns = [
     path("home/", views.ProductList.as_view(), name="home"),
     path("product_detail/<int:pk>", views.ProductDetail.as_view(), name="product_detail"),
     path("account/", views.AccountView.as_view(), name="account"),    
+    path("cart/", views.Cart.as_view(), name="cart"), #25で追加
     # ↓ECサイト初回授業のHTMLCSSの確認用
     # path("home/", views.home, name="home"),
     # path("account/", views.account, name="account"),
