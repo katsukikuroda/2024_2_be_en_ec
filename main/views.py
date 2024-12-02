@@ -30,7 +30,7 @@ class Logout(LogoutView):
     pass
 
 class ProductList(ListView):
-    paginate_by = 15
+    paginate_by = 1
     template_name = "main/home.html"
 
     def get_queryset(self):
@@ -55,7 +55,7 @@ class ProductList(ListView):
 
 class AccountView(LoginRequiredMixin, ListView):
     template_name = "main/account.html"
-    paginate_by = 5
+    paginate_by = 1
 
     def get_queryset(self):
         user = self.request.user
@@ -97,7 +97,7 @@ class ProductDetail(DetailView):
 
 #↓25で追加
 class Cart(LoginRequiredMixin, ListView):
-    paginate_by = 5
+    paginate_by = 1
     template_name = "main/cart.html"
 
     def get_queryset(self):
