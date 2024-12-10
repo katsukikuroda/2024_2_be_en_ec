@@ -11,6 +11,12 @@ from .models import Product #23で追加
 from django.views.generic.detail import DetailView #24で追加
 from .forms import ProductNumForm #24で追加
 from django.shortcuts import redirect #25で追加
+from django.conf import settings #27で追加
+import stripe #27で追加
+from django.shortcuts import render #27で追加
+from django.views.generic.base import View #27で追加
+from .models import OrderHistory #27で追加
+
 
 class SignUpView(CreateView):
     form_class = SignUpForm
@@ -114,8 +120,11 @@ class Cart(LoginRequiredMixin, ListView):
             num_dict = self.request.session["num_dict"]
             context["total_price"] = sum(self.product_net(product, num_dict) for product in self.products)  # 合計金額の算出
             context["num_dict"] = num_dict
+            context["total_num"] = sum(num_dict.values())  # 27追加
+            context["data_key"] = settings.STRIPE_PUBLISHABLE_KEY  # 27追加
         else:
             context["total_price"] = 0
+            context["total_num"] = 0  # 27追加
 
         return context
 
@@ -132,6 +141,45 @@ class Cart(LoginRequiredMixin, ListView):
         request.session["cart"] = cart
         request.session["num_dict"] = num_dict
         return redirect("cart")
+
+#↓27で追加
+class CheckoutView(View):
+    def post(self, request, *args, **kwargs):
+        stripe.api_key = settings.STRIPE_API_KEY
+
+        token = request.POST['stripeToken']
+
+        try:
+            # 決済処理
+            charge = stripe.Charge.create(
+                amount=int(request.POST["price"]),
+                currency='jpy',
+                source=token,
+                description="BeEn_ec",
+            )
+        except stripe.error.CardError as e:
+            # 決済が失敗したときのテンプレートを描画する
+            return render(request, "main/error.html", {
+                "message": "決済に失敗しました。",
+            })
+
+        purchased_products = self.request.session["cart"]
+        num_dict = self.request.session["num_dict"]
+
+        # 決済が成功したのでカートの内容を破棄する
+        del self.request.session["cart"]
+        del self.request.session["num_dict"]
+
+        # 商品の購入履歴を作成する
+        for product_pk in purchased_products:
+            product = Product.objects.get(pk=product_pk)
+            OrderHistory.objects.create(user=self.request.user, product=product, price=product.price, num=num_dict[str(product_pk)])
+
+        # 決済が成功した旨を伝えるテンプレートを描画する
+        return render(request, "main/complete.html", {
+            "products": Product.objects.filter(pk__in=purchased_products).order_by("pk"),
+            "num_dict": num_dict,
+        })
 
 # ↓初回授業のHTML,CSSの確認用
 # from django.shortcuts import render
